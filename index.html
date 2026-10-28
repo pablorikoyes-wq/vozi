@@ -81,7 +81,7 @@
   .ico.c2 { background: linear-gradient(135deg, #eef6ff, #f3e9ff); }
   .ico.c3 { background: linear-gradient(135deg, #eafff2, #e6f6ff); }
   .t-name { flex: 1; min-width: 0; font-weight: 700; font-size: 15.5px; letter-spacing: -.02em; line-height: 1.25; }
-  .t-price { color: var(--red); font-weight: 800; font-size: 16px; white-space: nowrap; align-self: flex-start; }
+  .t-price { color: var(--red); font-weight: 800; font-size: 15px; white-space: nowrap; align-self: flex-start; flex: none; }
   .t-meta { display: flex; gap: 6px 12px; flex-wrap: wrap; margin-top: 9px; color: #7b7f86; font-size: 12px; font-weight: 600; }
   .badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
   .b-ok { background: var(--green-soft); color: var(--green); }
@@ -531,7 +531,7 @@
       var cls = 'task' + (S.openId === x.id ? ' open' : '') + (isDone(x.my_status) ? ' done' : '');
       return '<div class="' + cls + '" data-id="' + x.id + '" role="button">' +
         '<div class="t-row"><div class="ico c' + (i % 4) + '">' + s.ico + '</div>' +
-        '<div class="t-name">' + esc(s.name) + '</div><div class="t-price">+' + num(x.reward) + '</div></div>' +
+        '<div class="t-name">' + esc(s.name) + '</div><div class="t-price">+' + som(x.reward) + '</div></div>' +
         '<div class="t-meta"><span>◷ ' + until(x.deadline) + '</span><span>👥 ' + x.left + ' ta joy</span></div>' +
         badge(SUB, x.my_status) +
         '<div class="t-more"><small>Vazifa shartlari</small><h3>' + esc(s.name) + '</h3>' +
@@ -573,7 +573,7 @@
     $('#exec').innerHTML =
       '<div class="exec-head"><div class="ico">' + s.ico + '</div>' +
       '<div style="flex:1;min-width:0"><b>' + esc(s.name) + '</b><small>' + kindText + ' • ' + until(x.deadline) + '</small></div>' +
-      '<div class="t-price">+' + num(x.reward) + '</div></div>' +
+      '<div class="t-price">+' + som(x.reward) + '</div></div>' +
       alert +
       '<div class="box"><small>Vazifa shartlari</small><div class="cond">' + esc(x.description) + '</div>' +
       (canDo ? (
@@ -739,7 +739,7 @@
     $('#h-subs').innerHTML = subs.length ? subs.map(function (s) {
       return '<div class="hi"><div class="hi-row"><div><div class="hi-t">' + esc(split(s.title).name) + '</div>' +
         '<div class="hi-d">' + dmy(s.created_at) + (s.status === 'rejected' && s.reason ? ' · ' + esc(s.reason) : '') + '</div></div>' +
-        '<div class="hi-s" style="color:' + (isDone(s.status) ? '#16a34a' : '#9a9ea5') + '">+' + num(s.reward) + '</div></div>' +
+        '<div class="hi-s" style="color:' + (isDone(s.status) ? '#16a34a' : '#9a9ea5') + '">+' + som(s.reward) + '</div></div>' +
         badge(SUB, s.status) + '</div>';
     }).join('') : '<div class="hi-d">Hali ishlar yo\'q. Birinchi vazifani bajaring!</div>';
     $('#h-wds').innerHTML = wds.length ? wds.map(function (w) {
