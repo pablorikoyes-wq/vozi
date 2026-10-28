@@ -40,6 +40,8 @@
   .logo { width: 44px; height: 44px; border-radius: 15px; flex: none; display: grid; place-items: center;
     color: #fff; font-weight: 800; font-size: 20px; background: linear-gradient(135deg, var(--red), #ff6a5f);
     box-shadow: 0 10px 22px rgba(255, 59, 48, .28); }
+  .logo img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; display: block; }
+  .logo.pic { background: #fff; }
   .brand b { display: block; font-size: 21px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
   .brand small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 600; margin-top: 3px; }
   .pill { padding: 10px 15px; border-radius: 999px; background: var(--green-soft); border: 1px solid var(--green-line);
@@ -857,6 +859,7 @@
       }).join('') +
       '<div style="height:6px"></div><button class="btn" id="sp-check">' + (done === list.length ? 'Davom etish' : 'Tekshirish') + '</button>';
     $('.js-back2').onclick = goBack;
+    loadLogo();
     $$('.sp-go').forEach(function (b) {
       b.onclick = function () {
         haptic();
@@ -906,8 +909,18 @@
     f.classList.remove('hidden');
     $('#retry').onclick = function () { location.reload(); };
   }
+  // аватарка бота вместо буквы «V»; если не загрузилась — остаётся буква
+  function loadLogo() {
+    var img = new Image();
+    img.onload = function () {
+      $$('.logo').forEach(function (el) { el.innerHTML = ''; el.appendChild(img.cloneNode()); el.classList.add('pic'); });
+    };
+    img.src = API + '/api/logo';
+  }
+
   function start() {
     if (!tg || !tg.initData || !API) { fatal("Ilovani Telegram'dagi @VoziUzBot orqali oching."); return; }
+    loadLogo();
     loadAll().then(function () {
       $('#loading').classList.add('hidden');
       $('#nav').classList.remove('hidden');
