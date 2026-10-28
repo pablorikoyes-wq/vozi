@@ -217,6 +217,8 @@
   .m { padding: 14px 6px 12px; border-radius: 22px; text-align: center; background: #fff; border: 1px solid var(--line);
     transition: border-color .18s, background .18s; }
   .m .mi { width: 48px; height: 48px; margin: 0 auto 8px; border-radius: 16px; display: grid; place-items: center; font-size: 22px; background: var(--soft); }
+  .m .mi img { width: 40px; height: 40px; object-fit: contain; border-radius: 10px; }
+  .m .mi svg { width: 34px; height: 34px; }
   .m span { display: block; color: var(--blue); font-weight: 700; font-size: 13.5px; line-height: 1.2; min-height: 33px; }
   .m i { display: block; width: 20px; height: 20px; margin: 8px auto 0; border-radius: 50%; border: 2px solid #d8d8de; }
   .m.on { background: #fff4f3; border-color: rgba(255, 59, 48, .5); }
@@ -748,7 +750,19 @@
   }
 
   // ---------- вывод ----------
-  var M_ICO = { card: '💳', click: '🔵', payme: '📲' };
+  var CARD_SVG = '<svg viewBox="0 0 48 48" fill="none"><rect x="4" y="10" width="40" height="28" rx="6" fill="#1e3a8a"/>' +
+    '<rect x="4" y="16" width="40" height="5" fill="#0f172a"/><rect x="9" y="26" width="9" height="7" rx="1.5" fill="#fbbf24"/>' +
+    '<rect x="22" y="29" width="16" height="2.5" rx="1.2" fill="#93c5fd"/></svg>';
+  var WALLET_SVG = '<svg viewBox="0 0 48 48" fill="none"><rect x="12" y="4" width="24" height="40" rx="6" fill="#0f172a"/>' +
+    '<rect x="15" y="9" width="18" height="28" rx="2" fill="#38bdf8"/><circle cx="24" cy="40.5" r="1.6" fill="#fff"/></svg>';
+  // Положите официальные логотипы в папку сайта как click.png и payme.png — подставятся автоматически
+  var M_FILE = { click: 'click.png', payme: 'payme.png' };
+  function methodIcon(id) {
+    if (id === 'card') return CARD_SVG;
+    if (M_FILE[id]) return '<img alt="" src="' + M_FILE[id] + '" onerror="this.outerHTML=WALLET_SVG_HTML">';
+    return WALLET_SVG;
+  }
+  window.WALLET_SVG_HTML = WALLET_SVG;
   function maskCard(d) { return d.replace(/(\d{4})(?=\d)/g, '$1 '); }
   function maskPhone(d) {
     if (d.indexOf('998') === 0) d = d.slice(3);
@@ -768,7 +782,7 @@
     $('#w-methods').innerHTML = me.methods.map(function (m) {
       var label = m.id === 'card' ? 'Uzcard /<br>Humo' : esc(m.name);
       return '<button class="m' + (S.method && S.method.id === m.id ? ' on' : '') + '" data-id="' + m.id + '">' +
-        '<div class="mi">' + (M_ICO[m.id] || '💳') + '</div><span>' + label + '</span><i></i></button>';
+        '<div class="mi">' + methodIcon(m.id) + '</div><span>' + label + '</span><i></i></button>';
     }).join('');
     $$('#w-methods .m').forEach(function (b) {
       b.onclick = function () {
@@ -917,6 +931,20 @@
     };
     img.src = API + '/api/logo';
   }
+
+  var taps = [];
+  $('#s-home .logo').addEventListener('click', function () {
+    if (!S.me || !S.me.test_mode) return;
+    var now = Date.now();
+    taps = taps.filter(function (t) { return now - t < 2500; }).concat(now);
+    if (taps.length < 5) return;
+    taps = [];
+    haptic('ok');
+    api('/api/test/reset', { method: 'POST' }).then(function (r) {
+      toast(r.message);
+      return loadAll();
+    }).catch(function (e) { toast(e.message, true); });
+  });
 
   function start() {
     if (!tg || !tg.initData || !API) { fatal("Ilovani Telegram'dagi @VoziUzBot orqali oching."); return; }
