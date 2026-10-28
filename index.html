@@ -91,6 +91,21 @@
   .t-more h3 { margin: 5px 0 6px; font-size: 20px; font-weight: 800; letter-spacing: -.035em; line-height: 1.15; }
   .t-more p { margin: 0 0 14px; color: #64686f; font-size: 13.5px; line-height: 1.5; white-space: pre-line;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .beta { display: flex; gap: 10px; align-items: flex-start; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
+    background: #fff8e6; border: 1px solid #ffe7a8; color: #8a5a00; font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .beta b { display: block; font-size: 13.5px; color: #6b4500; }
+  .tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #fff3cd;
+    color: #8a5a00; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; vertical-align: middle; }
+  .tpls { display: flex; flex-direction: column; gap: 9px; }
+  .tpl { display: grid; grid-template-columns: minmax(0, 1fr) 22px; align-items: center; gap: 12px; width: 100%;
+    min-height: 54px; padding: 13px 14px; text-align: left; border-radius: 17px; border: 1px solid #e8e8ec; background: #fff;
+    color: #34373c; font-size: 14px; line-height: 1.4; transition: border-color .18s, background .18s, opacity .18s; }
+  .tpl i { width: 21px; height: 21px; border-radius: 50%; border: 2px solid #cfd1d6; display: grid; place-items: center; }
+  .tpl i::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--red); transform: scale(0); transition: transform .18s; }
+  .tpl.on { border-color: rgba(255, 59, 48, .6); background: #fff7f6; box-shadow: 0 6px 16px rgba(255, 59, 48, .08); }
+  .tpl.on i { border-color: var(--red); }
+  .tpl.on i::after { transform: scale(1); }
+  .tpls.own .tpl { opacity: .45; }
   .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
 
   /* кнопки */
@@ -251,6 +266,7 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
+    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, pul yechish hozircha mavjud emas.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
       <p>Oddiy vazifalarni bajaring: post va ssenariy yozish, tarjima, so'rovnomalar. Har bir ish qo'lda tekshiriladi.</p>
@@ -261,7 +277,7 @@
       <div class="stat"><b id="st-done">0</b><span>siz bajargan</span></div>
     </div>
     <div class="panel">
-      <h2>Vazifalar</h2>
+      <h2 id="day-title">Bugungi vazifalar</h2>
       <div class="progress"><span id="pr-done">Bajarildi 0 / 0</span><em id="pr-left">Qoldi 0</em></div>
       <div id="tasks"></div>
     </div>
@@ -284,6 +300,7 @@
     </div>
     <div class="h-big">Reyting</div>
     <p class="sub">Reyting butun vaqt davomida ishlangan summa bo'yicha tuziladi.</p>
+    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test rejimi</b>Reytingda namunaviy (test) ishtirokchilar ham ko'rsatilgan.</div></div>
     <div id="board"></div>
   </section>
 
@@ -455,7 +472,9 @@
   if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
 
   // ---------- отрисовка ----------
-  function renderAll() { renderBalance(); renderHome(); renderProfile(); renderWithdraw(); }
+  function renderAll() {
+    $$('.js-beta').forEach(function (e) { e.classList.toggle('hidden', !S.me.test_mode); });
+    renderBalance(); renderHome(); renderProfile(); renderWithdraw(); }
 
   function renderBalance() { $$('.js-bal').forEach(function (e) { e.textContent = som(S.me.user.balance); }); }
 
@@ -467,6 +486,8 @@
     $('#st-tasks').textContent = open;
     $('#st-max').textContent = max ? short(max) : '—';
     $('#st-done').textContent = S.me.user.approved;
+    var td = tashkentToday().split('-');
+    $('#day-title').textContent = td[2] + '.' + td[1] + '.' + td[0].slice(2) + ' vazifalari';
     $('#pr-done').textContent = 'Bajarildi ' + done + ' / ' + t.length;
     $('#pr-left').textContent = 'Qoldi ' + open;
 
@@ -525,7 +546,12 @@
       alert +
       '<div class="box"><small>Vazifa shartlari</small><div class="cond">' + esc(x.description) + '</div>' +
       (canDo ? (
-        (needText ? '<span class="label">Sizning ishingiz</span>' +
+        (needText && x.templates && x.templates.length ?
+          '<span class="label">Shablonni tanlang</span><div class="tpls" id="e-tpls">' +
+          x.templates.map(function (t, i) {
+            return '<button class="tpl" data-i="' + i + '"><span>' + esc(t) + '</span><i></i></button>';
+          }).join('') + '</div>' : '') +
+        (needText ? '<span class="label">' + (x.templates && x.templates.length ? "Yoki o'zingiz yozing" : 'Sizning ishingiz') + '</span>' +
           '<textarea id="e-text" maxlength="4000" placeholder="Matnni shu yerga yozing..."></textarea>' +
           '<div class="counter" id="e-count">Yana 20 ta belgi kerak</div>' : '') +
         (needPhoto ? '<span class="label">Rasm</span>' +
@@ -543,8 +569,23 @@
       if (send) send.className = 'btn' + (okText && okPhoto ? '' : ' dim');
       return okText && okPhoto;
     }
+    $$('#e-tpls .tpl').forEach(function (b) {
+      b.onclick = function () {
+        haptic();
+        $$('#e-tpls .tpl').forEach(function (o) { o.classList.toggle('on', o === b); });
+        $('#e-tpls').classList.remove('own');
+        txt.value = x.templates[+b.dataset.i];
+        txt.oninput(true);
+      };
+    });
     if (txt) {
-      txt.oninput = function () {
+      txt.oninput = function (fromTpl) {
+        if (fromTpl !== true && $('#e-tpls')) {
+          var picked = $('#e-tpls .tpl.on');
+          if (picked && txt.value !== x.templates[+picked.dataset.i]) {
+            picked.classList.remove('on'); $('#e-tpls').classList.add('own');
+          }
+        }
         var n = txt.value.trim().length, c = $('#e-count');
         c.textContent = n < 20 ? 'Yana ' + (20 - n) + ' ta belgi kerak' : n + ' ta belgi ✓';
         c.className = 'counter' + (n >= 20 ? ' good' : '');
@@ -641,12 +682,15 @@
     $('#p-earned').textContent = num(u.earned);
     $('#p-approved').textContent = u.approved;
 
-    var btn = $('#p-wd'), can = u.balance >= min && !S.me.has_pending_withdrawal;
+    var btn = $('#p-wd'), test = !!S.me.test_mode;
+    var can = !test && u.balance >= min && !S.me.has_pending_withdrawal;
     btn.className = 'btn' + (can ? '' : ' dim');
-    $('#p-wd-text').textContent = S.me.has_pending_withdrawal ? "So'rov ko'rib chiqilmoqda"
+    $('#p-wd-text').textContent = test ? 'Test rejimida pul yechish yo\'q'
+      : S.me.has_pending_withdrawal ? "So'rov ko'rib chiqilmoqda"
       : can ? 'Pul yechish' : 'Minimal summa: ' + som(min);
     btn.onclick = function () {
       haptic();
+      if (test) { toast("Test rejimida pul yechish hozircha mavjud emas."); return; }
       if (S.me.has_pending_withdrawal) { toast("Avvalgi so'rovingiz ko'rib chiqilmoqda."); return; }
       if (u.balance < min) { toast('Yechish uchun kamida ' + som(min) + ' kerak.', true); return; }
       show('wd');
