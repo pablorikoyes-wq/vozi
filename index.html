@@ -401,8 +401,8 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function num(n) { return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
-  function som(n) { return num(n) + " so'm"; }
+  function num(n) { return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'); }
+  function som(n) { return num(n) + "\u00a0so'm"; }
   function short(n) { return n >= 1000 ? num(Math.round(n / 1000)) + 'k' : String(n); }
   function dmy(s) { var p = String(s || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : ''; }
   function tashkentToday() { return new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10); }
@@ -437,7 +437,12 @@
   }
   var SUB = { pending: ['🕓 Tekshirilmoqda', 'b-wait'], approved: ['✓ Qabul qilindi', 'b-ok'], rejected: ['✕ Rad etildi', 'b-bad'] };
   var WD = { pending: ["🕓 Ko'rib chiqilmoqda", 'b-wait'], paid: ["✓ To'landi", 'b-ok'], rejected: ['✕ Rad etildi', 'b-bad'] };
-  function badge(map, st) { var v = map[st]; return v ? '<span class="badge ' + v[1] + '">' + v[0] + '</span>' : ''; }
+  function badge(map, st) {
+    // тестовый режим: выполненное задание — просто зелёное «Bajarildi»
+    if (map === SUB && S.me && S.me.test_mode && (st === 'approved' || st === 'pending')) return '<span class="badge b-ok">✓ Bajarildi</span>';
+    var v = map[st]; return v ? '<span class="badge ' + v[1] + '">' + v[0] + '</span>' : '';
+  }
+  function isDone(st) { return st === 'approved' || (S.me && S.me.test_mode && st === 'pending'); }
 
   // ---------- сервер ----------
   function api(path, opts) {
@@ -494,7 +499,7 @@
 
   function renderHome() {
     var t = S.tasks;
-    var done = t.filter(function (x) { return x.my_status === 'approved'; }).length;
+    var done = t.filter(function (x) { return isDone(x.my_status); }).length;
     var open = t.filter(function (x) { return !x.my_status || x.my_status === 'rejected'; }).length;
     var max = t.reduce(function (m, x) { return Math.max(m, x.reward); }, 0);
     var min = t.reduce(function (m, x) { return m ? Math.min(m, x.reward) : x.reward; }, 0);
@@ -519,7 +524,7 @@
     $('#tasks').innerHTML = t.map(function (x, i) {
       var s = split(x.title);
       var canDo = !x.my_status || x.my_status === 'rejected';
-      var cls = 'task' + (S.openId === x.id ? ' open' : '') + (x.my_status === 'approved' ? ' done' : '');
+      var cls = 'task' + (S.openId === x.id ? ' open' : '') + (isDone(x.my_status) ? ' done' : '');
       return '<div class="' + cls + '" data-id="' + x.id + '" role="button">' +
         '<div class="t-row"><div class="ico c' + (i % 4) + '">' + s.ico + '</div>' +
         '<div class="t-name">' + esc(s.name) + '</div><div class="t-price">+' + num(x.reward) + '</div></div>' +
@@ -555,8 +560,9 @@
     var needPhoto = x.kind === 'photo' || x.kind === 'both';
     var canDo = !x.my_status || x.my_status === 'rejected';
     var alert = '';
-    if (x.my_status === 'pending') alert = '<div class="alert wait">🕓 Ishingiz tekshirilmoqda. Natija bot orqali keladi.</div>';
-    if (x.my_status === 'approved') alert = '<div class="alert ok">✓ Ishingiz qabul qilindi, mukofot balansingizda.</div>';
+    if (x.my_status === 'pending' && !S.me.test_mode) alert = '<div class="alert wait">🕓 Ishingiz tekshirilmoqda. Natija bot orqali keladi.</div>';
+    if (isDone(x.my_status) && S.me.test_mode) alert = '<div class="alert ok">✓ Vazifa bajarildi, mukofot balansingizda.</div>';
+    else if (x.my_status === 'approved') alert = '<div class="alert ok">✓ Ishingiz qabul qilindi, mukofot balansingizda.</div>';
     if (x.my_status === 'rejected') alert = '<div class="alert bad">✕ Rad etildi: ' + esc(x.my_reason || '') + '<br>Tuzatib, qayta yuborishingiz mumkin.</div>';
 
     var kindText = needText && needPhoto ? 'Matn + rasm' : needPhoto ? 'Rasm' : 'Matn, kamida 20 belgi';
@@ -580,8 +586,11 @@
           '<input type="file" id="e-photo" accept="image/*" hidden></label>' : '')
       ) : '') +
       '</div>' +
-      (canDo ? '<div class="note">Ishingiz qo\'lda tekshiriladi. Qabul qilingach, mukofot balansingizga tushadi va bot xabar yuboradi.</div>' +
-        '<button class="btn dim" id="e-send">Tekshiruvga yuborish</button>' : '');
+      (canDo ? (S.me.test_mode
+        ? '<div class="note">Vazifa darhol hisoblanadi. Ishlaringiz pul yechish vaqtida tekshiriladi.</div>' +
+          '<button class="btn dim" id="e-send">Yuborish</button>'
+        : '<div class="note">Ishingiz qo\'lda tekshiriladi. Qabul qilingach, mukofot balansingizga tushadi va bot xabar yuboradi.</div>' +
+          '<button class="btn dim" id="e-send">Tekshiruvga yuborish</button>') : '');
 
     var txt = $('#e-text'), ph = $('#e-photo'), send = $('#e-send');
     function ready() {
@@ -660,11 +669,18 @@
     (S.photo ? compress(S.photo) : Promise.resolve(null)).then(function (blob) {
       if (blob) fd.append('photo', blob, 'photo.jpg');
       return api('/api/submit', { method: 'POST', body: fd });
-    }).then(function () {
+    }).then(function (r) {
       haptic('ok');
-      modal('<div class="check">✓</div><h3>Ish yuborildi</h3>' +
-        '<p>Tekshiruvdan so\'ng <b style="color:#16a34a">+' + som(x.reward) + '</b> balansingizga tushadi. Natija bot orqali keladi.</p>' +
-        '<button class="btn" id="m-home">Bosh sahifaga qaytish</button>');
+      if (r.approved) {
+        modal('<div class="check">✓</div><h3>Vazifa bajarildi</h3>' +
+          '<p>Hisoblandi <b style="color:#16a34a">+' + som(x.reward) + '</b>. Balansingiz: <b>' +
+          som(S.me.user.balance + x.reward) + '</b>.</p>' +
+          '<button class="btn" id="m-home">Bosh sahifaga qaytish</button>');
+      } else {
+        modal('<div class="check">✓</div><h3>Ish yuborildi</h3>' +
+          '<p>Tekshiruvdan so\'ng <b style="color:#16a34a">+' + som(x.reward) + '</b> balansingizga tushadi. Natija bot orqali keladi.</p>' +
+          '<button class="btn" id="m-home">Bosh sahifaga qaytish</button>');
+      }
       $('#m-home').onclick = function () { closeModal(); S.openId = null; show('home'); };
       return loadAll();
     }).catch(function (e) {
@@ -719,7 +735,7 @@
     $('#h-subs').innerHTML = subs.length ? subs.map(function (s) {
       return '<div class="hi"><div class="hi-row"><div><div class="hi-t">' + esc(split(s.title).name) + '</div>' +
         '<div class="hi-d">' + dmy(s.created_at) + (s.status === 'rejected' && s.reason ? ' · ' + esc(s.reason) : '') + '</div></div>' +
-        '<div class="hi-s" style="color:' + (s.status === 'approved' ? '#16a34a' : '#9a9ea5') + '">+' + num(s.reward) + '</div></div>' +
+        '<div class="hi-s" style="color:' + (isDone(s.status) ? '#16a34a' : '#9a9ea5') + '">+' + num(s.reward) + '</div></div>' +
         badge(SUB, s.status) + '</div>';
     }).join('') : '<div class="hi-d">Hali ishlar yo\'q. Birinchi vazifani bajaring!</div>';
     $('#h-wds').innerHTML = wds.length ? wds.map(function (w) {
@@ -866,7 +882,7 @@
       }).then(function (r) {
         haptic('ok');
         S.wd = null;
-        modal('<div class="check">✓</div><h3>So\'rov qabul qilindi</h3><p>' + esc(r.message) + '</p>' +
+        modal('<div class="check">✓</div><h3>So\'rov yaratildi</h3><p>' + esc(r.message) + '</p>' +
           '<button class="btn" id="m-prof">Profilga qaytish</button>');
         $('#m-prof').onclick = function () { closeModal(); show('profile'); };
         $('#w-details').value = ''; $('#w-amount').value = '';
