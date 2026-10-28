@@ -281,7 +281,6 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
-    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
       <p>Oddiy vazifalarni bajaring: post va ssenariy yozish, tarjima, so'rovnomalar. Har bir ish qo'lda tekshiriladi.</p>
@@ -315,7 +314,7 @@
     </div>
     <div class="h-big">Reyting</div>
     <p class="sub">Reyting butun vaqt davomida ishlangan summa bo'yicha tuziladi.</p>
-    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test rejimi</b>Reytingda namunaviy (test) ishtirokchilar ham ko'rsatilgan.</div></div>
+    
     <div id="board"></div>
   </section>
 
@@ -777,7 +776,7 @@
     var n = me.sponsors_count || 0;
     $('#w-need').classList.toggle('hidden', !n);
     $('#w-need').textContent = "📢 Pul yechish uchun " + n + " ta homiy kanalga obuna bo'lish kerak. Keyingi qadamda ularni ko'rasiz."
-      + (me.test_mode ? " (Test rejimi: to'lov amalga oshirilmaydi.)" : '');
+      
     if (!S.method && me.methods.length) S.method = me.methods[0];
     $('#w-methods').innerHTML = me.methods.map(function (m) {
       var label = m.id === 'card' ? 'Uzcard /<br>Humo' : esc(m.name);
@@ -861,7 +860,7 @@
       '<button class="back js-back2">← Orqaga</button></div>' +
       '<div class="w-ico">📢</div><h1 class="w-title" style="font-size:30px">Obunani tasdiqlang</h1>' +
       '<div class="w-sub">Pul yechish uchun homiy kanallarga obuna bo\'ling, so\'ng «Tekshirish» tugmasini bosing.</div>' +
-      (S.me.test_mode ? '<div class="beta"><span>🧪</span><div><b>Test rejimi</b>Bu sinov: to\'lov amalga oshirilmaydi.</div></div>' : '') +
+      
       '<div class="progress"><span>Bajarildi ' + done + ' / ' + list.length + '</span><em>' +
       (done === list.length ? 'Tayyor ✓' : 'Qoldi ' + (list.length - done)) + '</em></div>' +
       list.map(function (x, i) {
