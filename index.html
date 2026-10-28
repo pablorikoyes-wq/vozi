@@ -106,6 +106,17 @@
   .tpl.on i { border-color: var(--red); }
   .tpl.on i::after { transform: scale(1); }
   .tpls.own .tpl { opacity: .45; }
+  .sp { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 10px; border-radius: 20px;
+    background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(0, 0, 0, .03); }
+  .sp.ok { background: #f8fffa; border-color: #d4f3df; }
+  .sp .ico { width: 46px; height: 46px; }
+  .sp-t { flex: 1; min-width: 0; }
+  .sp-t b { display: block; font-size: 15.5px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .sp-t small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .sp-go { padding: 10px 14px; border-radius: 14px; background: var(--blue); color: #fff; font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+  .sp-ok { padding: 9px 12px; border-radius: 14px; background: var(--green-soft); color: var(--green); font-weight: 800; font-size: 13px; white-space: nowrap; }
+  .need { margin: 0 0 12px; padding: 12px 14px; border-radius: 18px; background: var(--blue-soft); border: 1px solid #d5e6ff;
+    color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.45; }
   .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
 
   /* кнопки */
@@ -266,15 +277,15 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
-    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, pul yechish hozircha mavjud emas.</div></div>
+    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
       <p>Oddiy vazifalarni bajaring: post va ssenariy yozish, tarjima, so'rovnomalar. Har bir ish qo'lda tekshiriladi.</p>
     </div>
     <div class="stats">
-      <div class="stat"><b id="st-tasks">0</b><span>faol vazifa</span></div>
-      <div class="stat"><b id="st-max">0</b><span>so'mgacha<br>mukofot</span></div>
-      <div class="stat"><b id="st-done">0</b><span>siz bajargan</span></div>
+      <div class="stat"><b id="st-1">0</b><span id="sl-1">faol vazifa</span></div>
+      <div class="stat"><b id="st-2">0</b><span id="sl-2">so'mgacha<br>mukofot</span></div>
+      <div class="stat"><b id="st-3">0</b><span id="sl-3">siz bajargan</span></div>
     </div>
     <div class="panel">
       <h2 id="day-title">Bugungi vazifalar</h2>
@@ -339,6 +350,7 @@
     <h1 class="w-title">Pul yechish</h1>
     <div class="w-sub">Qabul qilish usulini tanlang</div>
     <div class="avail"><small>Yechish mumkin</small><b id="w-bal">0 so'm</b></div>
+    <div class="need hidden" id="w-need" style="margin-top:12px"></div>
     <div class="methods" id="w-methods"></div>
     <div class="wbox">
       <label id="w-label">Karta raqami</label>
@@ -347,10 +359,12 @@
       <label>Summa</label>
       <div class="field"><input id="w-amount" inputmode="numeric" autocomplete="off" placeholder="0"><span>so'm</span></div>
       <div class="hint" id="w-min"></div>
-      <button class="btn" id="w-send">Pul yechish</button>
+      <button class="btn" id="w-send">Davom etish</button>
     </div>
     <div class="logos"><span>UZCARD</span><span>HUMO</span><span>Click</span><span>Payme</span></div>
   </section>
+  <!-- СПОНСОРЫ -->
+  <section id="s-spons" class="screen"></section>
 </main>
 
 <nav id="nav" class="hidden">
@@ -459,14 +473,14 @@
   function show(screen) {
     S.screen = screen;
     $$('.screen').forEach(function (s) { s.classList.toggle('on', s.id === 's-' + screen); });
-    var tab = screen === 'exec' ? 'home' : screen === 'wd' ? 'profile' : screen;
+    var tab = screen === 'exec' ? 'home' : (screen === 'wd' || screen === 'spons') ? 'profile' : screen;
     S.tab = tab;
     $$('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.go === tab); });
     window.scrollTo(0, 0);
-    if (tg && tg.BackButton) { if (screen === 'exec' || screen === 'wd') tg.BackButton.show(); else tg.BackButton.hide(); }
+    if (tg && tg.BackButton) { if (screen === 'exec' || screen === 'wd' || screen === 'spons') tg.BackButton.show(); else tg.BackButton.hide(); }
     if (screen === 'top') loadTop();
   }
-  function goBack() { haptic(); show(S.screen === 'wd' ? 'profile' : 'home'); }
+  function goBack() { haptic(); show(S.screen === 'spons' ? 'wd' : S.screen === 'wd' ? 'profile' : 'home'); }
   $$('nav button').forEach(function (b) { b.onclick = function () { haptic(); show(b.dataset.go); }; });
   $$('.js-back').forEach(function (b) { b.onclick = goBack; });
   if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
@@ -483,9 +497,16 @@
     var done = t.filter(function (x) { return x.my_status === 'approved'; }).length;
     var open = t.filter(function (x) { return !x.my_status || x.my_status === 'rejected'; }).length;
     var max = t.reduce(function (m, x) { return Math.max(m, x.reward); }, 0);
-    $('#st-tasks').textContent = open;
-    $('#st-max').textContent = max ? short(max) : '—';
-    $('#st-done').textContent = S.me.user.approved;
+    var min = t.reduce(function (m, x) { return m ? Math.min(m, x.reward) : x.reward; }, 0);
+    if (S.me.test_mode) {
+      $('#st-1').textContent = num(S.me.demo_users || 0); $('#sl-1').textContent = 'ishtirokchi';
+      $('#st-2').textContent = min ? short(min) : '—'; $('#sl-2').innerHTML = "so'mdan<br>vazifa uchun";
+      $('#st-3').textContent = open; $('#sl-3').textContent = 'vazifa hozir';
+    } else {
+      $('#st-1').textContent = open; $('#sl-1').textContent = 'faol vazifa';
+      $('#st-2').textContent = max ? short(max) : '—'; $('#sl-2').innerHTML = "so'mgacha<br>mukofot";
+      $('#st-3').textContent = S.me.user.approved; $('#sl-3').textContent = 'siz bajargan';
+    }
     var td = tashkentToday().split('-');
     $('#day-title').textContent = td[2] + '.' + td[1] + '.' + td[0].slice(2) + ' vazifalari';
     $('#pr-done').textContent = 'Bajarildi ' + done + ' / ' + t.length;
@@ -682,15 +703,13 @@
     $('#p-earned').textContent = num(u.earned);
     $('#p-approved').textContent = u.approved;
 
-    var btn = $('#p-wd'), test = !!S.me.test_mode;
-    var can = !test && u.balance >= min && !S.me.has_pending_withdrawal;
+    var btn = $('#p-wd');
+    var can = u.balance >= min && !S.me.has_pending_withdrawal;
     btn.className = 'btn' + (can ? '' : ' dim');
-    $('#p-wd-text').textContent = test ? 'Test rejimida pul yechish yo\'q'
-      : S.me.has_pending_withdrawal ? "So'rov ko'rib chiqilmoqda"
+    $('#p-wd-text').textContent = S.me.has_pending_withdrawal ? "So'rov ko'rib chiqilmoqda"
       : can ? 'Pul yechish' : 'Minimal summa: ' + som(min);
     btn.onclick = function () {
       haptic();
-      if (test) { toast("Test rejimida pul yechish hozircha mavjud emas."); return; }
       if (S.me.has_pending_withdrawal) { toast("Avvalgi so'rovingiz ko'rib chiqilmoqda."); return; }
       if (u.balance < min) { toast('Yechish uchun kamida ' + som(min) + ' kerak.', true); return; }
       show('wd');
@@ -723,6 +742,10 @@
     var me = S.me;
     $('#w-bal').textContent = som(me.user.balance);
     $('#w-min').textContent = 'Minimal summa: ' + som(me.min_withdraw);
+    var n = me.sponsors_count || 0;
+    $('#w-need').classList.toggle('hidden', !n);
+    $('#w-need').textContent = "📢 Pul yechish uchun " + n + " ta homiy kanalga obuna bo'lish kerak. Keyingi qadamda ularni ko'rasiz."
+      + (me.test_mode ? " (Test rejimi: to'lov amalga oshirilmaydi.)" : '');
     if (!S.method && me.methods.length) S.method = me.methods[0];
     $('#w-methods').innerHTML = me.methods.map(function (m) {
       var label = m.id === 'card' ? 'Uzcard /<br>Humo' : esc(m.name);
@@ -765,7 +788,7 @@
     });
   }
   $('#w-send').onclick = function () {
-    var me = S.me, m = S.method, btn = this;
+    var me = S.me, m = S.method;
     var digits = $('#w-details').value.replace(/\D/g, '');
     var amount = parseInt($('#w-amount').value.replace(/\D/g, ''), 10) || 0;
     if (!m) { toast("To'lov usulini tanlang.", true); return; }
@@ -776,15 +799,73 @@
     }
     if (amount < me.min_withdraw) { haptic('err'); toast('Minimal summa: ' + som(me.min_withdraw), true); return; }
     if (amount > me.user.balance) { haptic('err'); toast("Balansda yetarli mablag' yo'q.", true); return; }
-    confirmBox(som(amount) + ' → ' + m.name + ' •••• ' + digits.slice(-4) + '\nTasdiqlaysizmi?').then(function (ok) {
+    haptic();
+    S.wd = { amount: amount, method: m, digits: digits };
+    if (me.sponsors_count) openSponsors(); else confirmAndSend();
+  };
+
+  // ---------- спонсоры ----------
+  function openSponsors() {
+    $('#s-spons').innerHTML = '<div class="top"><div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>' +
+      '<button class="back js-back2">← Orqaga</button></div><div class="spin" style="margin-top:20vh"></div>';
+    $('.js-back2').onclick = goBack;
+    show('spons');
+    checkSponsors(false);
+  }
+  function checkSponsors(proceed) {
+    return api('/api/sponsors').then(function (d) {
+      renderSponsors(d.sponsors);
+      var all = d.sponsors.every(function (x) { return x.ok; });
+      if (proceed) {
+        if (all) { haptic('ok'); confirmAndSend(); }
+        else { haptic('err'); toast("Hali hamma kanallarga obuna bo'linmagan.", true); }
+      }
+    }).catch(function (e) { toast(e.message, true); });
+  }
+  function renderSponsors(list) {
+    var done = list.filter(function (x) { return x.ok; }).length;
+    $('#s-spons').innerHTML =
+      '<div class="top"><div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>' +
+      '<button class="back js-back2">← Orqaga</button></div>' +
+      '<div class="w-ico">📢</div><h1 class="w-title" style="font-size:30px">Obunani tasdiqlang</h1>' +
+      '<div class="w-sub">Pul yechish uchun homiy kanallarga obuna bo\'ling, so\'ng «Tekshirish» tugmasini bosing.</div>' +
+      (S.me.test_mode ? '<div class="beta"><span>🧪</span><div><b>Test rejimi</b>Bu sinov: to\'lov amalga oshirilmaydi.</div></div>' : '') +
+      '<div class="progress"><span>Bajarildi ' + done + ' / ' + list.length + '</span><em>' +
+      (done === list.length ? 'Tayyor ✓' : 'Qoldi ' + (list.length - done)) + '</em></div>' +
+      list.map(function (x, i) {
+        return '<div class="sp' + (x.ok ? ' ok' : '') + '"><div class="ico c' + (i % 4) + '">' + (x.kind === 'request' ? '📝' : '📢') + '</div>' +
+          '<div class="sp-t"><b>' + esc(x.title) + '</b><small>' +
+          (x.kind === 'request' ? "Qo'shilish so'rovini yuboring" : "Kanalga obuna bo'ling") + '</small></div>' +
+          (x.ok ? '<span class="sp-ok">✓ Tayyor</span>' : '<button class="sp-go" data-link="' + esc(x.link) + '">' +
+            (x.kind === 'request' ? "So'rov yuborish" : "Obuna bo'lish") + '</button>') + '</div>';
+      }).join('') +
+      '<div style="height:6px"></div><button class="btn" id="sp-check">' + (done === list.length ? 'Davom etish' : 'Tekshirish') + '</button>';
+    $('.js-back2').onclick = goBack;
+    $$('.sp-go').forEach(function (b) {
+      b.onclick = function () {
+        haptic();
+        var link = b.dataset.link;
+        if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(link)) tg.openTelegramLink(link);
+        else window.open(link, '_blank');
+      };
+    });
+    $('#sp-check').onclick = function () {
+      var btn = this; btn.disabled = true; btn.textContent = 'Tekshirilmoqda...';
+      checkSponsors(true).then(function () { var b2 = $('#sp-check'); if (b2) b2.disabled = false; });
+    };
+  }
+
+  function confirmAndSend() {
+    var w = S.wd; if (!w) return;
+    confirmBox(som(w.amount) + ' → ' + w.method.name + ' •••• ' + w.digits.slice(-4) + '\nTasdiqlaysizmi?').then(function (ok) {
       if (!ok) return;
-      btn.disabled = true;
       modal('<div class="spin"></div><h3>Yuborilmoqda</h3><p>So\'rovingiz yuborilmoqda.</p>');
       api('/api/withdraw', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amount, method: m.id, details: digits })
+        body: JSON.stringify({ amount: w.amount, method: w.method.id, details: w.digits })
       }).then(function (r) {
         haptic('ok');
+        S.wd = null;
         modal('<div class="check">✓</div><h3>So\'rov qabul qilindi</h3><p>' + esc(r.message) + '</p>' +
           '<button class="btn" id="m-prof">Profilga qaytish</button>');
         $('#m-prof').onclick = function () { closeModal(); show('profile'); };
@@ -795,9 +876,9 @@
         modal('<div class="check" style="background:#fff1f0;color:#e0261c">!</div><h3>Xatolik</h3><p>' + esc(e.message) + '</p>' +
           '<button class="btn ghost" id="m-close">Yopish</button>');
         $('#m-close').onclick = closeModal;
-      }).finally(function () { btn.disabled = false; });
+      });
     });
-  };
+  }
 
   // ---------- старт ----------
   function fatal(msg) {
