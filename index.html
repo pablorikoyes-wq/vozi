@@ -301,7 +301,7 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
-    <div class="view hidden js-view"><div><b>Ko'rish rejimi</b>Vazifalarni bajarish uchun ilovani Telegram'da oching.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
+    <div class="view hidden js-view"><div><b>Mehmon rejimi</b>Natijalar faqat shu qurilmada saqlanadi. To'liq versiya — Telegram'da.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
     <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
@@ -489,7 +489,7 @@
     var names = ['Sardor_07', 'malika.uz', 'Jasur', 'dilnoza_m', 'Bekzod 🔥', 'azizbek99', 'Nilufar ✨', 'shoxrux_x', "Ulug'bek", 'kamola.07'];
     return {
       '/api/me': { ok: true, user: { id: 0, first_name: 'Mehmon', balance: 0, earned: 0, approved: 0, pending: 0 },
-        min_withdraw: 50000, has_pending_withdrawal: false, test_mode: false, sponsors_count: 0,
+        min_withdraw: 50000, has_pending_withdrawal: false, test_mode: true, demo_users: 7482, sponsors_count: 0,
         methods: [{ id: 'card', name: 'Karta (Uzcard / Humo)', digits: 16 }, { id: 'click', name: 'Click', digits: 12 }, { id: 'payme', name: 'Payme', digits: 12 }] },
       '/api/tasks': { ok: true, tasks: T.map(function (x, i) {
         return { id: i + 1, title: x[0], description: x[1], reward: x[2], kind: 'text', deadline: today, left: 10 - i * 2, my_status: null, my_reason: null, templates: x[3] };
@@ -500,14 +500,65 @@
     };
   }
 
+  // ---------- гостевой режим: всё работает «понарошку», данные хранятся только в этом браузере ----------
+  function guestLoad() {
+    var g = null;
+    try { g = JSON.parse(localStorage.getItem('vozi_guest') || 'null'); } catch (e) {}
+    return g || { balance: 0, earned: 0, done: {}, subs: [], wds: [] };
+  }
+  function guestSave(g) { try { localStorage.setItem('vozi_guest', JSON.stringify(g)); } catch (e) {} S.guest = g; }
+  function nowStr() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
+  function guestApi(path, opts) {
+    var g = S.guest || guestLoad(), D = demoData(), m = (opts.method || 'GET').toUpperCase();
+    var approved = g.subs.length;
+    var res;
+    if (path === '/api/me') {
+      res = D['/api/me'];
+      res.user.balance = g.balance; res.user.earned = g.earned; res.user.approved = approved;
+    } else if (path === '/api/tasks') {
+      res = D['/api/tasks'];
+      res.tasks.forEach(function (t) { if (g.done[t.id]) t.my_status = 'approved'; });
+    } else if (path === '/api/history') {
+      res = { ok: true, submissions: g.subs.slice().reverse(), withdrawals: g.wds.slice().reverse() };
+    } else if (path === '/api/top') {
+      res = D['/api/top']; res.test_mode = true;
+      var me = { name: 'Mehmon', earned: g.earned, me: true };
+      var rows = res.top.concat(g.earned ? [me] : []).sort(function (a, b) { return b.earned - a.earned; });
+      res.top = rows.slice(0, 30);
+      res.me = { name: 'Mehmon', earned: g.earned, rank: g.earned ? rows.indexOf(me) + 1 : rows.length + 1 };
+    } else if (path === '/api/sponsors') {
+      res = { ok: true, sponsors: [] };
+    } else if (path === '/api/submit' && m === 'POST') {
+      var id = +opts.body.get('task_id');
+      var t = D['/api/tasks'].tasks.filter(function (x) { return x.id === id; })[0];
+      if (!t) return Promise.reject(new Error('Vazifa topilmadi.'));
+      if (g.done[id]) return Promise.reject(new Error('Siz bu vazifani allaqachon bajargansiz.'));
+      g.done[id] = true; g.balance += t.reward; g.earned += t.reward;
+      g.subs.push({ id: g.subs.length + 1, title: t.title, status: 'approved', reward: t.reward, created_at: nowStr() });
+      guestSave(g);
+      res = { ok: true, approved: true, message: 'Vazifa bajarildi!' };
+    } else if (path === '/api/withdraw' && m === 'POST') {
+      var b = JSON.parse(opts.body || '{}');
+      if (b.amount > g.balance) return Promise.reject(new Error("Balansda yetarli mablag' yo'q."));
+      g.balance -= b.amount;
+      g.wds.push({ id: g.wds.length + 1, amount: b.amount, status: 'pending', reason: null,
+        method: b.method === 'card' ? 'Karta' : b.method === 'click' ? 'Click' : 'Payme',
+        details: '•••• ' + String(b.details).slice(-4), created_at: nowStr() });
+      guestSave(g);
+      res = { ok: true, message: "So'rov yaratildi ✅ Bu mehmon rejimi: haqiqiy to'lov amalga oshirilmaydi." };
+    } else if (path === '/api/test/reset' && m === 'POST') {
+      g.done = {}; guestSave(g);
+      res = { ok: true, message: '🧪 Limitlar yangilandi! Vazifalarni qayta bajarishingiz mumkin.' };
+    } else {
+      return Promise.reject(new Error('Mehmon rejimida mavjud emas.'));
+    }
+    return Promise.resolve(JSON.parse(JSON.stringify(res)));
+  }
+
   // ---------- сервер ----------
   function api(path, opts) {
     opts = opts || {};
-    if (S.view) {
-      var d = demoData()[path];
-      if (d && (!opts.method || opts.method === 'GET')) return Promise.resolve(JSON.parse(JSON.stringify(d)));
-      return Promise.reject(new Error("Ko'rish rejimi: vazifalarni bajarish uchun ilovani Telegram'da oching."));
-    }
+    if (S.view) return guestApi(path, opts);
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 20000);
     var headers = Object.assign({ Authorization: 'tma ' + tg.initData }, opts.headers || {});
@@ -809,6 +860,7 @@
       haptic();
       if (S.me.has_pending_withdrawal) { toast("Avvalgi so'rovingiz ko'rib chiqilmoqda."); return; }
       if (u.balance < min) { toast('Yechish uchun kamida ' + som(min) + ' kerak.', true); return; }
+      $('#w-amount').value = num(S.me.user.balance);  // всегда актуальный баланс
       show('wd');
     };
 
