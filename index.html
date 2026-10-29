@@ -467,18 +467,24 @@
     if (map === SUB && S.me && S.me.test_mode && (st === 'approved' || st === 'pending')) return '<span class="badge b-ok">✓ Bajarildi</span>';
     var v = map[st]; return v ? '<span class="badge ' + v[1] + '">' + v[0] + '</span>' : '';
   }
+  // тест: описание из двух частей — первая на карточке, вторая на экране выполнения
+  function descPart(d, i) {
+    var p = String(d || '').split(/\n\s*\n/);
+    if (!((S.me && S.me.test_mode) || S.view) || p.length < 2) return d;
+    return i === 0 ? p[0] : p.slice(1).join('\n\n');
+  }
   function isDone(st) { return st === 'approved' || (S.me && S.me.test_mode && st === 'pending'); }
 
   // ---------- режим просмотра (открыто вне Telegram) ----------
   function demoData() {
     var today = tashkentToday();
     var T = [
-      ['🏋️ Fitnes zal haqida fikr', "Joy: Toshkent, Chilonzor tumanidagi fitnes zal.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: trenajyorlar, murabbiylar, tozalik va narx.", 45000,
-        ["Zal keng va toza, trenajyorlar yangi. Murabbiylar e'tiborli.", "Narxi biroz qimmat, lekin sharoit bunga arziydi.", "Murabbiy texnikani to'g'ri o'rgatdi, bir oyda natijani sezdim."]],
-      ['🛵 Ovqat yetkazib berish haqida fikr', "Joy: Toshkent, Yunusobod tumanidagi ovqat yetkazib berish xizmati.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: tezlik, ovqat issiqligi, kuryer muomalasi va qadoq.", 50000,
-        ["Buyurtma 30 daqiqada keldi, ovqat hali issiq edi.", "Porsiya katta, narx esa o'rtacha. Ilovada buyurtma berish qulay.", "Ichimlik unutib qoldirilgan edi, lekin tezda olib kelishdi."]],
-      ['☕ Qahvaxona haqida fikr', "Joy: Toshkent, Mirobod tumanidagi qahvaxona.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: qahva va desertlar ta'mi, muhit, xizmat va narx.", 55000,
-        ["Qahvasi xushbo'y, desertlari yangi. Joy shinam.", "Ofitsiantlar tez xizmat ko'rsatadi, Wi-Fi yaxshi ishlaydi.", "Narxlar biroz yuqori, lekin sifat yaxshi."]]
+      ['🏋️ Fitnes zal haqida fikr', "Trenajyorlar, murabbiylar va tozalik haqida qisqa ijobiy fikr.\n\nKamida 20 belgidan iborat fikr yozing: zal sharoiti va murabbiylar ishini belgilang.", 45000,
+        ['Zal toza, trenajyorlar yangi!', "Murabbiylar juda e'tiborli", "Sharoit zo'r, tavsiya qilaman"]],
+      ['🛵 Ovqat yetkazib berish haqida fikr', "Yetkazish tezligi, ovqat ta'mi va kuryer haqida qisqa ijobiy fikr.\n\nKamida 20 belgidan iborat fikr yozing: yetkazish tezligi va ovqat sifatini belgilang.", 50000,
+        ['Tez yetkazishdi, ovqat issiq!', 'Kuryer xushmuomala, rahmat', 'Ovqat mazali, qadoq toza']],
+      ['☕ Qahvaxona haqida fikr', "Qahva ta'mi, muhit va xizmat haqida qisqa ijobiy fikr.\n\nKamida 20 belgidan iborat fikr yozing: qahva ta'mi va xizmat sifatini belgilang.", 55000,
+        ['Qahvasi juda mazali ekan!', 'Joy shinam, xizmat tez', 'Desertlari yangi, yoqdi']]
     ];
     var names = ['Sardor_07', 'malika.uz', 'Jasur', 'dilnoza_m', 'Bekzod 🔥', 'azizbek99', 'Nilufar ✨', 'shoxrux_x', "Ulug'bek", 'kamola.07'];
     return {
@@ -586,7 +592,7 @@
         '<div class="t-meta"><span>◷ ' + until(x.deadline) + '</span><span>👥 ' + x.left + ' ta joy</span></div>' +
         badge(SUB, x.my_status) +
         '<div class="t-more"><small>Vazifa shartlari</small><h3>' + esc(s.name) + '</h3>' +
-        '<p>' + esc(x.description) + '</p>' +
+        '<p>' + esc(descPart(x.description, 0)) + '</p>' +
         '<button class="btn js-start" data-id="' + x.id + '">' +
         (x.my_status === 'rejected' ? 'Qayta yuborish' : canDo ? 'Bajarishni boshlash' : "Batafsil ko'rish") +
         '</button></div></div>';
@@ -614,7 +620,7 @@
     var needText = x.kind === 'text' || x.kind === 'both';
     var needPhoto = x.kind === 'photo' || x.kind === 'both';
     var canDo = !x.my_status || x.my_status === 'rejected';
-    var withRate = !!(S.me.test_mode && needText && x.templates && x.templates.length);  // тест: оценка звёздами
+    var withRate = !!((S.me.test_mode || S.view) && needText && x.templates && x.templates.length);  // тест: оценка звёздами
     S.rating = 0;
     var alert = '';
     if (x.my_status === 'pending' && !S.me.test_mode) alert = '<div class="alert wait">🕓 Ishingiz tekshirilmoqda. Natija bot orqali keladi.</div>';
@@ -628,7 +634,7 @@
       '<div style="flex:1;min-width:0"><b>' + esc(s.name) + '</b><small>' + kindText + ' • ' + until(x.deadline) + '</small></div>' +
       '<div class="t-price">+' + som(x.reward) + '</div></div>' +
       alert +
-      '<div class="box"><small>Vazifa shartlari</small><div class="cond">' + esc(x.description) + '</div>' +
+      '<div class="box"><small>Vazifa shartlari</small><div class="cond">' + esc(descPart(x.description, 1)) + '</div>' +
       (canDo ? (
         (needText && x.templates && x.templates.length ?
           '<span class="label">Shablonni tanlang</span><div class="tpls" id="e-tpls">' +
