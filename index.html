@@ -125,12 +125,21 @@
   .sp-ok { padding: 9px 12px; border-radius: 14px; background: var(--green-soft); color: var(--green); font-weight: 800; font-size: 13px; white-space: nowrap; }
   .need { margin: 0 0 12px; padding: 12px 14px; border-radius: 18px; background: var(--blue-soft); border: 1px solid #d5e6ff;
     color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.45; }
-    .view { display: flex; align-items: center; gap: 12px; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
+  .view { display: flex; align-items: center; gap: 12px; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
     background: var(--blue-soft); border: 1px solid #d5e6ff; color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.4; }
   .view b { display: block; color: #1d4ed8; font-size: 13.5px; }
   .view a { flex: none; padding: 9px 12px; border-radius: 13px; background: var(--red); color: #fff; font-weight: 700;
     font-size: 13px; text-decoration: none; white-space: nowrap; }
-    .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
+  .rate { margin-top: 16px; padding: 16px; border-radius: 20px; background: #fff; border: 1px solid #ececef; }
+  .rate.attn { border-color: rgba(255, 59, 48, .55); box-shadow: 0 0 0 4px rgba(255, 59, 48, .08); }
+  .rate-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .rate-h b { font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+  .rate-h span { padding: 5px 9px; border-radius: 999px; background: #fff0f0; color: #d72d27; font-size: 11px; font-weight: 700; }
+  .rate p { margin: 6px 0 8px; color: #74787f; font-size: 12.5px; }
+  .stars { display: flex; gap: 4px; }
+  .star { font-size: 36px; line-height: 1; color: #d6d6d6; padding: 2px; transition: transform .15s, color .15s; }
+  .star.on { color: #ffc531; transform: scale(1.06); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
 
   /* кнопки */
   .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px;
@@ -279,19 +288,6 @@
   .fatal .logo { margin: 0 auto 16px; width: 60px; height: 60px; font-size: 28px; border-radius: 20px; }
   .fatal b { display: block; font-size: 20px; margin-bottom: 6px; }
   .fatal p { color: var(--muted); margin: 0 0 18px; }
-
-  .beta,
-.need {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-}
-
-.view {
-    display: none !important;
-}
-
 </style>
 </head>
 <body>
@@ -305,7 +301,7 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
-        <div class="view hidden js-view"><div><b>Ko'rish rejimi</b>Vazifalarni bajarish uchun ilovani Telegram'da oching.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
+    <div class="view hidden js-view"><div><b>Ko'rish rejimi</b>Vazifalarni bajarish uchun ilovani Telegram'da oching.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
     <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
@@ -497,10 +493,11 @@
         me: { name: 'Mehmon', earned: 0, rank: null } }
     };
   }
+
   // ---------- сервер ----------
   function api(path, opts) {
     opts = opts || {};
-        if (S.view) {
+    if (S.view) {
       var d = demoData()[path];
       if (d && (!opts.method || opts.method === 'GET')) return Promise.resolve(JSON.parse(JSON.stringify(d)));
       return Promise.reject(new Error("Ko'rish rejimi: vazifalarni bajarish uchun ilovani Telegram'da oching."));
@@ -617,6 +614,8 @@
     var needText = x.kind === 'text' || x.kind === 'both';
     var needPhoto = x.kind === 'photo' || x.kind === 'both';
     var canDo = !x.my_status || x.my_status === 'rejected';
+    var withRate = !!(S.me.test_mode && needText && x.templates && x.templates.length);  // тест: оценка звёздами
+    S.rating = 0;
     var alert = '';
     if (x.my_status === 'pending' && !S.me.test_mode) alert = '<div class="alert wait">🕓 Ishingiz tekshirilmoqda. Natija bot orqali keladi.</div>';
     if (isDone(x.my_status) && S.me.test_mode) alert = '<div class="alert ok">✓ Vazifa bajarildi, mukofot balansingizda.</div>';
@@ -644,8 +643,13 @@
           '<input type="file" id="e-photo" accept="image/*" hidden></label>' : '')
       ) : '') +
       '</div>' +
+      (canDo && withRate ? '<div class="rate" id="e-rate"><div class="rate-h"><b>Baho bering</b><span>Majburiy</span></div>' +
+        '<p>Joyga 1 dan 5 gacha yulduz qo\'ying.</p><div class="stars">' +
+        [1, 2, 3, 4, 5].map(function (n) { return '<button class="star" data-n="' + n + '">★</button>'; }).join('') +
+        '</div></div>' : '') +
       (canDo ? (S.me.test_mode
-        ? '<div class="note">Vazifa darhol hisoblanadi. Ishlaringiz pul yechish vaqtida tekshiriladi.</div>' +
+        ? '<div class="note">' + (withRate ? 'Sharh Google Xaritalarda e\'lon qilinadi (test rejimi: aslida e\'lon qilinmaydi).'
+            : 'Vazifa darhol hisoblanadi. Ishlaringiz pul yechish vaqtida tekshiriladi.') + '</div>' +
           '<button class="btn dim" id="e-send">Yuborish</button>'
         : '<div class="note">Ishingiz qo\'lda tekshiriladi. Qabul qilingach, mukofot balansingizga tushadi va bot xabar yuboradi.</div>' +
           '<button class="btn dim" id="e-send">Tekshiruvga yuborish</button>') : '');
@@ -654,9 +658,19 @@
     function ready() {
       var okText = !needText || (txt && txt.value.trim().length >= 20);
       var okPhoto = !needPhoto || !!S.photo;
-      if (send) send.className = 'btn' + (okText && okPhoto ? '' : ' dim');
-      return okText && okPhoto;
+      var okRate = !withRate || S.rating > 0;
+      if (send) send.className = 'btn' + (okText && okPhoto && okRate ? '' : ' dim');
+      return okText && okPhoto && okRate;
     }
+    $$('#e-rate .star').forEach(function (b) {
+      b.onclick = function () {
+        haptic();
+        S.rating = +b.dataset.n;
+        $$('#e-rate .star').forEach(function (o) { o.classList.toggle('on', +o.dataset.n <= S.rating); });
+        $('#e-rate').classList.remove('attn');
+        ready();
+      };
+    });
     $$('#e-tpls .tpl').forEach(function (b) {
       b.onclick = function () {
         haptic();
@@ -692,7 +706,9 @@
     if (send) send.onclick = function () {
       if (!ready()) {
         haptic('err');
-        toast(needText && (!txt || txt.value.trim().length < 20) ? "Matn kamida 20 ta belgidan iborat bo'lsin." : 'Rasm yuklang.', true);
+        if (needText && (!txt || txt.value.trim().length < 20)) toast("Matn kamida 20 ta belgidan iborat bo'lsin.", true);
+        else if (withRate && !S.rating) { toast('Yulduz bilan baho bering.', true); $('#e-rate').classList.add('attn'); }
+        else toast('Rasm yuklang.', true);
         return;
       }
       submit(x, txt ? txt.value.trim() : '');
@@ -724,6 +740,7 @@
     var fd = new FormData();
     fd.append('task_id', x.id);
     if (text) fd.append('text', text);
+    if (S.rating) fd.append('rating', S.rating);
     (S.photo ? compress(S.photo) : Promise.resolve(null)).then(function (blob) {
       if (blob) fd.append('photo', blob, 'photo.jpg');
       return api('/api/submit', { method: 'POST', body: fd });
@@ -983,7 +1000,8 @@
     img.onload = function () {
       $$('.logo').forEach(function (el) { el.innerHTML = ''; el.appendChild(img.cloneNode()); el.classList.add('pic'); });
     };
-    img.src = API + '/api/logo';
+    img.onerror = function () { if (img.src.indexOf('icon.png') === -1) img.src = 'icon.png'; };
+    img.src = S.view ? 'icon.png' : API + '/api/logo';
   }
 
   var taps = [];
@@ -1001,7 +1019,7 @@
   });
 
   function start() {
-        if (!tg || !tg.initData || !API) {
+    if (!tg || !tg.initData || !API) {
       S.view = true;  // открыто в браузере или с экрана «Домой» — показываем режим просмотра
       $$('.js-view').forEach(function (e) { e.classList.remove('hidden'); });
     }
