@@ -99,9 +99,6 @@
   .t-more h3 { margin: 5px 0 6px; font-size: 20px; font-weight: 800; letter-spacing: -.035em; line-height: 1.15; }
   .t-more p { margin: 0 0 14px; color: #64686f; font-size: 13.5px; line-height: 1.5; white-space: pre-line;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .beta { display: flex; gap: 10px; align-items: flex-start; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
-    background: #fff8e6; border: 1px solid #ffe7a8; color: #8a5a00; font-size: 13px; font-weight: 600; line-height: 1.4; }
-  .beta b { display: block; font-size: 13.5px; color: #6b4500; }
   .tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #fff3cd;
     color: #8a5a00; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; vertical-align: middle; }
   .tpls { display: flex; flex-direction: column; gap: 9px; }
@@ -123,13 +120,6 @@
   .sp-t small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
   .sp-go { padding: 10px 14px; border-radius: 14px; background: var(--blue); color: #fff; font-weight: 700; font-size: 13.5px; white-space: nowrap; }
   .sp-ok { padding: 9px 12px; border-radius: 14px; background: var(--green-soft); color: var(--green); font-weight: 800; font-size: 13px; white-space: nowrap; }
-  .need { margin: 0 0 12px; padding: 12px 14px; border-radius: 18px; background: var(--blue-soft); border: 1px solid #d5e6ff;
-    color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.45; }
-  .view { display: flex; align-items: center; gap: 12px; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
-    background: var(--blue-soft); border: 1px solid #d5e6ff; color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.4; }
-  .view b { display: block; color: #1d4ed8; font-size: 13.5px; }
-  .view a { flex: none; padding: 9px 12px; border-radius: 13px; background: var(--red); color: #fff; font-weight: 700;
-    font-size: 13px; text-decoration: none; white-space: nowrap; }
   .rate { margin-top: 16px; padding: 16px; border-radius: 20px; background: #fff; border: 1px solid #ececef; }
   .rate.attn { border-color: rgba(255, 59, 48, .55); box-shadow: 0 0 0 4px rgba(255, 59, 48, .08); }
   .rate-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -301,8 +291,6 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
-    <div class="view hidden js-view"><div><b>Mehmon rejimi</b>Natijalar faqat shu qurilmada saqlanadi. To'liq versiya — Telegram'da.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
-    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
       <p>Oddiy vazifalarni bajaring: post va ssenariy yozish, tarjima, so'rovnomalar. Har bir ish qo'lda tekshiriladi.</p>
@@ -336,7 +324,6 @@
     </div>
     <div class="h-big">Reyting</div>
     <p class="sub">Reyting butun vaqt davomida ishlangan summa bo'yicha tuziladi.</p>
-    <div class="beta hidden js-beta"><span>🧪</span><div><b>Test rejimi</b>Reytingda namunaviy (test) ishtirokchilar ham ko'rsatilgan.</div></div>
     <div id="board"></div>
   </section>
 
@@ -375,7 +362,6 @@
     <h1 class="w-title">Pul yechish</h1>
     <div class="w-sub">Qabul qilish usulini tanlang</div>
     <div class="avail"><small>Yechish mumkin</small><b id="w-bal">0 so'm</b></div>
-    <div class="need hidden" id="w-need" style="margin-top:12px"></div>
     <div class="methods" id="w-methods"></div>
     <div class="wbox">
       <label id="w-label">Karta raqami</label>
@@ -604,7 +590,6 @@
 
   // ---------- отрисовка ----------
   function renderAll() {
-    $$('.js-beta').forEach(function (e) { e.classList.toggle('hidden', !S.me.test_mode); });
     renderBalance(); renderHome(); renderProfile(); renderWithdraw(); }
 
   function renderBalance() { $$('.js-bal').forEach(function (e) { e.textContent = som(S.me.user.balance); }); }
@@ -705,7 +690,7 @@
         [1, 2, 3, 4, 5].map(function (n) { return '<button class="star" data-n="' + n + '">★</button>'; }).join('') +
         '</div></div>' : '') +
       (canDo ? (S.me.test_mode
-        ? '<div class="note">' + (withRate ? 'Sharh Google Xaritalarda e\'lon qilinadi (test rejimi: aslida e\'lon qilinmaydi).'
+        ? '<div class="note">' + (withRate ? 'Sharh Google Xaritalarda e\'lon qilinadi.'
             : 'Vazifa darhol hisoblanadi. Ishlaringiz pul yechish vaqtida tekshiriladi.') + '</div>' +
           '<button class="btn dim" id="e-send">Yuborish</button>'
         : '<div class="note">Ishingiz qo\'lda tekshiriladi. Qabul qilingach, mukofot balansingizga tushadi va bot xabar yuboradi.</div>' +
@@ -904,9 +889,6 @@
     $('#w-bal').textContent = som(me.user.balance);
     $('#w-min').textContent = 'Minimal summa: ' + som(me.min_withdraw);
     var n = me.sponsors_count || 0;
-    $('#w-need').classList.toggle('hidden', !n);
-    $('#w-need').textContent = "📢 Pul yechish uchun " + n + " ta homiy kanalga obuna bo'lish kerak. Keyingi qadamda ularni ko'rasiz."
-      + (me.test_mode ? " (Test rejimi: to'lov amalga oshirilmaydi.)" : '');
     if (!S.method && me.methods.length) S.method = me.methods[0];
     $('#w-methods').innerHTML = me.methods.map(function (m) {
       var label = m.id === 'card' ? 'Uzcard /<br>Humo' : esc(m.name);
@@ -990,7 +972,6 @@
       '<button class="back js-back2">← Orqaga</button></div>' +
       '<div class="w-ico">📢</div><h1 class="w-title" style="font-size:30px">Obunani tasdiqlang</h1>' +
       '<div class="w-sub">Pul yechish uchun homiy kanallarga obuna bo\'ling, so\'ng «Tekshirish» tugmasini bosing.</div>' +
-      (S.me.test_mode ? '<div class="beta"><span>🧪</span><div><b>Test rejimi</b>Bu sinov: to\'lov amalga oshirilmaydi.</div></div>' : '') +
       '<div class="progress"><span>Bajarildi ' + done + ' / ' + list.length + '</span><em>' +
       (done === list.length ? 'Tayyor ✓' : 'Qoldi ' + (list.length - done)) + '</em></div>' +
       list.map(function (x, i) {
@@ -1079,7 +1060,6 @@
   function start() {
     if (!tg || !tg.initData || !API) {
       S.view = true;  // открыто в браузере или с экрана «Домой» — показываем режим просмотра
-      $$('.js-view').forEach(function (e) { e.classList.remove('hidden'); });
     }
     loadLogo();
     loadAll().then(function () {
