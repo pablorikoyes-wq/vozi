@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>Vozi — vazifalar platformasi</title>
+<title>Vozi</title>
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vozi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -119,7 +125,12 @@
   .sp-ok { padding: 9px 12px; border-radius: 14px; background: var(--green-soft); color: var(--green); font-weight: 800; font-size: 13px; white-space: nowrap; }
   .need { margin: 0 0 12px; padding: 12px 14px; border-radius: 18px; background: var(--blue-soft); border: 1px solid #d5e6ff;
     color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.45; }
-  .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
+    .view { display: flex; align-items: center; gap: 12px; margin: -8px 0 16px; padding: 12px 14px; border-radius: 18px;
+    background: var(--blue-soft); border: 1px solid #d5e6ff; color: #2b5fb8; font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .view b { display: block; color: #1d4ed8; font-size: 13.5px; }
+  .view a { flex: none; padding: 9px 12px; border-radius: 13px; background: var(--red); color: #fff; font-weight: 700;
+    font-size: 13px; text-decoration: none; white-space: nowrap; }
+    .empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 14px; line-height: 1.5; }
 
   /* кнопки */
   .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px;
@@ -289,6 +300,7 @@
       <div class="brand"><div class="logo">V</div><div><b>Vozi</b><small>vazifalar platformasi</small></div></div>
       <div class="pill js-bal">0 so'm</div>
     </div>
+        <div class="view hidden js-view"><div><b>Ko'rish rejimi</b>Vazifalarni bajarish uchun ilovani Telegram'da oching.</div><a href="https://t.me/VoziUzBot">Telegram'da ochish</a></div>
     <div class="beta hidden js-beta"><span>🧪</span><div><b>Test (beta) versiya</b>Balansdagi pullar haqiqiy emas, to'lovlar amalga oshirilmaydi.</div></div>
     <div class="hero">
       <h1>✍️ Vazifa bajar.<br>Pul ishla. 💰</h1>
@@ -456,9 +468,38 @@
   }
   function isDone(st) { return st === 'approved' || (S.me && S.me.test_mode && st === 'pending'); }
 
+  // ---------- режим просмотра (открыто вне Telegram) ----------
+  function demoData() {
+    var today = tashkentToday();
+    var T = [
+      ['🏋️ Fitnes zal haqida fikr', "Joy: Toshkent, Chilonzor tumanidagi fitnes zal.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: trenajyorlar, murabbiylar, tozalik va narx.", 45000,
+        ["Zal keng va toza, trenajyorlar yangi. Murabbiylar e'tiborli.", "Narxi biroz qimmat, lekin sharoit bunga arziydi.", "Murabbiy texnikani to'g'ri o'rgatdi, bir oyda natijani sezdim."]],
+      ['🛵 Ovqat yetkazib berish haqida fikr', "Joy: Toshkent, Yunusobod tumanidagi ovqat yetkazib berish xizmati.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: tezlik, ovqat issiqligi, kuryer muomalasi va qadoq.", 50000,
+        ["Buyurtma 30 daqiqada keldi, ovqat hali issiq edi.", "Porsiya katta, narx esa o'rtacha. Ilovada buyurtma berish qulay.", "Ichimlik unutib qoldirilgan edi, lekin tezda olib kelishdi."]],
+      ['☕ Qahvaxona haqida fikr', "Joy: Toshkent, Mirobod tumanidagi qahvaxona.\n\nShu joy haqida o'z tajribangizga asoslanib qisqa fikr yozing: qahva va desertlar ta'mi, muhit, xizmat va narx.", 55000,
+        ["Qahvasi xushbo'y, desertlari yangi. Joy shinam.", "Ofitsiantlar tez xizmat ko'rsatadi, Wi-Fi yaxshi ishlaydi.", "Narxlar biroz yuqori, lekin sifat yaxshi."]]
+    ];
+    var names = ['Sardor_07', 'malika.uz', 'Jasur', 'dilnoza_m', 'Bekzod 🔥', 'azizbek99', 'Nilufar ✨', 'shoxrux_x', "Ulug'bek", 'kamola.07'];
+    return {
+      '/api/me': { ok: true, user: { id: 0, first_name: 'Mehmon', balance: 0, earned: 0, approved: 0, pending: 0 },
+        min_withdraw: 50000, has_pending_withdrawal: false, test_mode: false, sponsors_count: 0,
+        methods: [{ id: 'card', name: 'Karta (Uzcard / Humo)', digits: 16 }, { id: 'click', name: 'Click', digits: 12 }, { id: 'payme', name: 'Payme', digits: 12 }] },
+      '/api/tasks': { ok: true, tasks: T.map(function (x, i) {
+        return { id: i + 1, title: x[0], description: x[1], reward: x[2], kind: 'text', deadline: today, left: 10 - i * 2, my_status: null, my_reason: null, templates: x[3] };
+      }) },
+      '/api/history': { ok: true, submissions: [], withdrawals: [] },
+      '/api/top': { ok: true, test_mode: false, top: names.map(function (n, i) { return { name: n, earned: 3000000 - i * 270000 }; }),
+        me: { name: 'Mehmon', earned: 0, rank: null } }
+    };
+  }
   // ---------- сервер ----------
   function api(path, opts) {
     opts = opts || {};
+        if (S.view) {
+      var d = demoData()[path];
+      if (d && (!opts.method || opts.method === 'GET')) return Promise.resolve(JSON.parse(JSON.stringify(d)));
+      return Promise.reject(new Error("Ko'rish rejimi: vazifalarni bajarish uchun ilovani Telegram'da oching."));
+    }
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 20000);
     var headers = Object.assign({ Authorization: 'tma ' + tg.initData }, opts.headers || {});
@@ -955,7 +996,10 @@
   });
 
   function start() {
-    if (!tg || !tg.initData || !API) { fatal("Ilovani Telegram'dagi @VoziUzBot orqali oching."); return; }
+        if (!tg || !tg.initData || !API) {
+      S.view = true;  // открыто в браузере или с экрана «Домой» — показываем режим просмотра
+      $$('.js-view').forEach(function (e) { e.classList.remove('hidden'); });
+    }
     loadLogo();
     loadAll().then(function () {
       $('#loading').classList.add('hidden');
